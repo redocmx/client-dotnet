@@ -11,6 +11,9 @@ namespace Redocmx
 {
     public class Service
     {
+        private static Service _instance;
+        private static readonly object _lock = new object();
+
         private readonly string _apiKey;
         private readonly string _apiUrl;
 
@@ -18,6 +21,19 @@ namespace Redocmx
         {
             _apiKey = apiKey ?? Environment.GetEnvironmentVariable("REDOC_API_KEY");
             _apiUrl = Environment.GetEnvironmentVariable("REDOC_API_URL") ?? "https://api.redoc.mx/cfdis/convert";
+            _instance = this;
+        }
+
+        public static Service GetInstance(string apiKey = null)
+        {
+            lock (_lock)
+            {
+                if (_instance == null)
+                {
+                    _instance = new Service(apiKey);
+                }
+                return _instance;
+            }
         }
 
         public async Task<Pdf> ConvertCfdiAsync(string xmlContent, Dictionary<string, string> options = null)

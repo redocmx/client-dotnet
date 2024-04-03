@@ -1,77 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Redocmx
 {
-    public class Cfdi
+    public class Cfdi : XmlFile
     {
         private Service _service;
-        private string _addenda;
-        private string _filePath;
-        private string _fileContent;
+        private Addenda _addenda;
+        private Dictionary<string, string> _addendaReplaceValues;
         private Pdf _pdf;
 
-        public Cfdi(Service service)
+        public Cfdi() : base()
         {
-            _service = service ?? throw new ArgumentNullException(nameof(service));
+            _service = Service.GetInstance();
         }
 
-        public Cfdi FromFile(string filePath)
+        public new Cfdi FromFile(string filePath)
         {
-            _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
+            this._filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
             return this;
         }
 
-        public Cfdi FromString(string fileContent)
+        public new Cfdi FromString(string fileContent)
         {
-            _fileContent = fileContent ?? throw new ArgumentNullException(nameof(fileContent));
+            this._fileContent = fileContent ?? throw new ArgumentNullException(nameof(fileContent));
             return this;
         }
 
-        public async Task<(string Content, string Type)> GetXmlContentAsync()
+        public void SetAddenda(Addenda addenda, Dictionary<string, string> replaceValues = null)
         {
-            if (!string.IsNullOrEmpty(_fileContent))
-            {
-                return (_fileContent, "string");
-            }
-
-            if (!string.IsNullOrEmpty(_filePath))
-            {
-                if (!File.Exists(_filePath))
-                {
-                    throw new FileNotFoundException($"Failed to read XML content from file: {this._filePath}. The file does not exist.");
-                }
-
-                try
-                {
-                    string fileContent = await File.ReadAllTextAsync(_filePath, Encoding.UTF8);
-                    return (fileContent, "file");
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    throw new UnauthorizedAccessException($"Permission denied:{_filePath}. The file exists but cannot be read.");
-                }
-                catch (Exception ex)
-                {
-                    throw new ArgumentNullException(ex.Message);
-                }
-
-            }
-
-            throw new InvalidOperationException("XML content for the CFDI must be provided.");
-        }
-
-        public void SetAddenda(string addenda)
-        {
-            _addenda = addenda ?? throw new ArgumentNullException(nameof(addenda));
-        }
-
-        public string GetAddenda()
-        {
-            return _addenda;
+            _addenda = addenda;
+            _addendaReplaceValues = replaceValues;
         }
 
         public async Task<Pdf> ToPdfAsync(Dictionary<string, string> options = null)
@@ -81,12 +41,14 @@ namespace Redocmx
                 return _pdf;
             }
 
-            var (Content, Type) = await GetXmlContentAsync();
+            var (Content, Type) = await this.GetFile();
 
-            if (!string.IsNullOrEmpty(GetAddenda()))
+            if (_addenda != null)
             {
-                if (options == null) options = new Dictionary<string, string>();
-                options["addenda"] = GetAddenda();
+                options ??= new Dictionary<string, string>();
+
+                string addendaContent = await _addenda.GetFileContent(this._addendaReplaceValues);
+                options["addenda"] = addendaContent;
             }
 
             _pdf = await _service.ConvertCfdiAsync(Content, options);

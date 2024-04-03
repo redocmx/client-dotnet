@@ -12,6 +12,8 @@ namespace Redocmx
             _service = new Service(_apiKey);
         }
 
-        public Cfdi Cfdi => new Cfdi(_service);
+        public Cfdi Cfdi => new Cfdi();
+        public Addenda Addenda => new Addenda();
+
     }
 }

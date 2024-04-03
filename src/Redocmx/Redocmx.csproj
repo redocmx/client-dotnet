@@ -5,7 +5,7 @@
     <AssemblyName>Redocmx</AssemblyName>
     <RootNamespace>Redocmx</RootNamespace>
     <PackageId>Redocmx</PackageId>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Authors>redoc.mx</Authors>
     <Company>redoc.mx</Company>
